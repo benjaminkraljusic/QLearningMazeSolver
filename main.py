@@ -15,8 +15,9 @@ def main():
     eps_max = 1.00
     eps_min = 0.05
     eps_decay_rate = 0.00003
-
-    L = np.loadtxt('mazes/maze31x31.txt', usecols=range(31), dtype=int)
+    
+    L = np.loadtxt('mazes/maze15x15MultiSol.txt', usecols=range(15), dtype=int)
+    # L = np.loadtxt('mazes/maze31x31.txt', usecols=range(31), dtype=int)
     # L = np.loadtxt('mazes/maze15x15.txt', usecols=range(15), dtype=int)
     # L = np.loadtxt('mazes/maze11x11.txt', usecols=range(11), dtype=int)
     # L = np.loadtxt('mazes/maze7x7.txt', usecols=range(7), dtype=int)
