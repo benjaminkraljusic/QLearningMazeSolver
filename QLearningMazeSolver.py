@@ -89,8 +89,8 @@ class QLearningMazeSolver:
                 currentQ = self.QTable[self.previousState][1][self.QTable[self.previousState][0].index(action)]
 
                 # update the Q-table for the previous state
-                self.QTable[self.previousState][1][self.QTable[self.previousState][0].index(action)] =  currentQ + self.alpha*(self.Rewards[self.currentState] + self.gamma*max(self.QTable[self.currentState][1]) - currentQ)
-
+                # self.QTable[self.previousState][1][self.QTable[self.previousState][0].index(action)] =  currentQ + self.alpha*(self.Rewards[self.currentState] + self.gamma*max(self.QTable[self.currentState][1]) - currentQ)
+                self.QTable[self.previousState][1][self.QTable[self.previousState][0].index(action)] =  self.Rewards[self.currentState] + self.gamma*max(self.QTable[self.currentState][1]) 
                 # episode is done if the final state is visited
                 if self.currentState == self.finalState:
                     break
