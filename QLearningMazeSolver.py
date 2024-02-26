@@ -105,6 +105,9 @@ class QLearningMazeSolver:
                 self.status = True
 
     def getPath(self):
+        if not self.status:
+            raise Exception("Maze is not solved. Path could not be found.") 
+        
         if self.path == None and self.status:
             self.path = [self.initialState]
             self.currentState = self.initialState
