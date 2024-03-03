@@ -28,7 +28,7 @@ def main():
     initial_state = (1, 1)
     final_state = (L.shape[0] - 2, L.shape[1] - 2)
 
-    solver = QLearningMazeSolver(L, n_training_episodes, max_steps, initial_state, final_state, gamma, eps_min, eps_max, eps_decay_rate)
+    solver = QLearningMazeSolver(L, n_training_episodes, max_steps, initial_state, final_state, gamma, eps_min, eps_max, eps_decay_rate, greedy = True)
 
     start = timer()
     solver.learn() # solving the maze

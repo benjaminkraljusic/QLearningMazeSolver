@@ -5,7 +5,7 @@ from timeit import default_timer as timer
 
 class QLearningMazeSolver:
 
-    def __init__(self, maze, nTrainingEpisodes, maxSteps, initialState, finalState, gamma, epsMin, epsMax, epsDecayRate):
+    def __init__(self, maze, nTrainingEpisodes, maxSteps, initialState, finalState, gamma, epsMin, epsMax, epsDecayRate, greedy = True):
         self.maze = maze
         self.nTrainingEpisodes = nTrainingEpisodes
         self.maxSteps = maxSteps
@@ -26,6 +26,7 @@ class QLearningMazeSolver:
                            'right' : [0, 1]}
         self.status = False
         self.path = None
+        self.greedy = greedy
         self.QTableInit()
         
     def QTableInit(self):
@@ -53,7 +54,6 @@ class QLearningMazeSolver:
     def changeState(self, action):
         self.currentState = (self.currentState[0] + self.increments[action][0], self.currentState[1] + self.increments[action][1])
         
-
     # returns the action with greediness proportional to eps 
     def getActionEps(self):
         rand = np.random.uniform()
@@ -100,7 +100,8 @@ class QLearningMazeSolver:
 
             if any(self.QTable[self.initialState][1]) != 0:
                 self.status = True
-                return # Learning is done as soon as the solution is found. This provides a greedy solution.
+                if self.greedy:
+                    return # Learning is done as soon as the solution is found. This provides a greedy solution which is not necessarily optimal.
 
     def getPath(self):
         if not self.status:
