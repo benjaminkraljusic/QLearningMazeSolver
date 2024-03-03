@@ -5,13 +5,12 @@ from timeit import default_timer as timer
 
 class QLearningMazeSolver:
 
-    def __init__(self, maze, nTrainingEpisodes, maxSteps, initialState, finalState, alpha, gamma, epsMin, epsMax, epsDecayRate):
+    def __init__(self, maze, nTrainingEpisodes, maxSteps, initialState, finalState, gamma, epsMin, epsMax, epsDecayRate):
         self.maze = maze
         self.nTrainingEpisodes = nTrainingEpisodes
         self.maxSteps = maxSteps
         self.initialState = initialState
         self.finalState = finalState
-        self.alpha = alpha
         self.gamma = gamma
         self.epsMin = epsMin
         self.epsMax = epsMax
@@ -73,8 +72,8 @@ class QLearningMazeSolver:
         for ep in range(self.nTrainingEpisodes):
             self.eps = self.epsMin + (self.epsMax - self.epsMin)*np.exp(-self.epsDecayRate*ep)
 
-            if ep%100 == 0 and ep != 0:
-                    print(str(ep) + " episodes finished!")
+            # if ep%100 == 0 and ep != 0:
+            #         print(str(ep) + " episodes finished!")
 
             self.currentState = self.initialState
             
@@ -89,7 +88,6 @@ class QLearningMazeSolver:
                 currentQ = self.QTable[self.previousState][1][self.QTable[self.previousState][0].index(action)]
 
                 # update the Q-table for the previous state
-                # self.QTable[self.previousState][1][self.QTable[self.previousState][0].index(action)] =  currentQ + self.alpha*(self.Rewards[self.currentState] + self.gamma*max(self.QTable[self.currentState][1]) - currentQ)
                 self.QTable[self.previousState][1][self.QTable[self.previousState][0].index(action)] =  self.Rewards[self.currentState] + self.gamma*max(self.QTable[self.currentState][1]) 
                 # episode is done if the final state is visited
                 if self.currentState == self.finalState:
@@ -100,9 +98,9 @@ class QLearningMazeSolver:
                 #     self.QTable[current_state][1][0] == -np.inf
                 #     break
 
-
             if any(self.QTable[self.initialState][1]) != 0:
                 self.status = True
+                return # Learning is done as soon as the solution is found. This provides a greedy solution.
 
     def getPath(self):
         if not self.status:
