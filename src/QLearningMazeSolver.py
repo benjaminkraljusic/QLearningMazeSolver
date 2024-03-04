@@ -93,13 +93,12 @@ class QLearningMazeSolver:
                 self.QTable[currentState][3] = 0
 
 
-    def train(self, learningRate, discountFactor, numOfEpisodes, maxNumberOfMoves, epsilonMin, epsilonMax, decayRate,
+    def train(self, discountFactor, numOfEpisodes, maxNumberOfMoves, epsilonMin, epsilonMax, decayRate,
               deadEndCheckerEnabled=False):
         """Trains the Q table on the given maze
 
         Args:
-            learningRate (float):
-            discountFactor (float):
+            discountFactor (float): Discount factor for Q learning algorithm
             numOfEpisodes (int): Number of episodes
             maxNumberOfMoves (int): Maximum number of moves that the agent can perform in a single episode
             epsilonMin (float): Minimum value of the epsilon parameter in the decayed-epsilon-greedy policy
@@ -140,9 +139,7 @@ class QLearningMazeSolver:
                     self.QTable[prevState][moveFromPrevToCurrState[1]] = -np.inf
                 else:
                     # Update Q table normally
-                    self.QTable[state][action] = self.QTable[state][action] * (1 - learningRate) \
-                                                 + learningRate * (
-                                                             reward + discountFactor * np.max(self.QTable[newState]))
+                    self.QTable[state][action] = reward + discountFactor * np.max(self.QTable[newState])
 
                 # End episode if the final state is reached
                 if newState == finalState:
