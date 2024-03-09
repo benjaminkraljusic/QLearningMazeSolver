@@ -27,6 +27,7 @@ class QLearningMazeSolver:
         self.status = False
         self.path = None
         self.greedy = greedy
+        self.visitedStates = [] # Matrix of the visited states to be used for the animation.
         self.QTableInit()
         
     def QTableInit(self):
@@ -76,7 +77,8 @@ class QLearningMazeSolver:
             #         print(str(ep) + " episodes finished!")
 
             self.currentState = self.initialState
-            
+            visitedStates = [self.currentState]
+
             for i in range(self.maxSteps):
                 action = self.getActionEps()
 
@@ -84,6 +86,7 @@ class QLearningMazeSolver:
 
                 # transition to a new state
                 self.changeState(action)
+                visitedStates.append(self.currentState)
 
                 currentQ = self.QTable[self.previousState][1][self.QTable[self.previousState][0].index(action)]
 
@@ -91,6 +94,7 @@ class QLearningMazeSolver:
                 self.QTable[self.previousState][1][self.QTable[self.previousState][0].index(action)] =  self.Rewards[self.currentState] + self.gamma*max(self.QTable[self.currentState][1]) 
                 # episode is done if the final state is visited
                 if self.currentState == self.finalState:
+                    self.visitedStates.append(visitedStates)
                     break
                 
                 # episode is done if a dead end is visited
@@ -122,9 +126,6 @@ class QLearningMazeSolver:
 
 
     def showPath(self):
-        plt.figure()
-        plt.imshow(self.maze, cmap='binary_r')
-
         M = 3*self.maze
 
         path = self.getPath()
@@ -134,4 +135,33 @@ class QLearningMazeSolver:
         
         plt.figure()
         plt.imshow(M, cmap='hot')
+        plt.title('SOLVED!')
         plt.show()
+
+    def animate(self):
+        if len(self.maze)*len(self.maze[0]) > 49:
+            print("Animation not supported for big mazes.")
+            return
+        
+        initM = np.zeros((len(self.maze), len(self.maze[0]), 3), dtype=np.uint8)
+        initM[self.maze == 1] = [255, 255, 255]
+        initM[self.initialState[0]][self.initialState[1]] = [255, 0, 0]
+        initM[self.finalState[0]][self.finalState[1]] = [255, 0, 0]
+
+        for i in range(len(self.visitedStates)):
+            title = 'Episode ' + str(i + 1)
+
+            for j in range(len(self.visitedStates[i])):
+                M = initM.copy()
+                M[self.visitedStates[i][j][0]][self.visitedStates[i][j][1]] = [0, 0, 255]
+                plt.title(title)
+                plt.imshow(M) 
+                plt.pause(0.01)
+
+        self.showPath()
+        plt.show()
+        
+
+
+        
+

@@ -3,14 +3,15 @@ import matplotlib.pyplot as plt
 import random 
 from timeit import default_timer as timer
 from QLearningMazeSolver import QLearningMazeSolver
+from src.MazeGenerator import MazeGenerator as mazeGen
 
 def main():
     # learning hyperparameters
 
-    n_training_episodes = 700 # number of the episodes agent will use for the training
+    n_training_episodes = 30 # number of the episodes agent will use for the training
     gamma = 0.9 # discount factor
 
-    max_steps = 4500 # maximum number of steps
+    max_steps = 100000 # maximum number of steps
 
     # exploration/exploatation parameters
     eps_max = 1.00
@@ -19,10 +20,15 @@ def main():
     eps_decay_rate = 0.0002 
 
     # L = np.loadtxt('mazes/maze15x15MultiSol.txt', usecols=range(15), dtype=int)
-    L = np.loadtxt('mazes/maze31x31.txt', usecols=range(31), dtype=int)
+    # L = np.loadtxt('mazes/maze31x31.txt', usecols=range(31), dtype=int)
     # L = np.loadtxt('mazes/maze15x15.txt', usecols=range(15), dtype=int)
     # L = np.loadtxt('mazes/maze11x11.txt', usecols=range(11), dtype=int)
     # L = np.loadtxt('mazes/maze7x7.txt', usecols=range(7), dtype=int)
+
+    # Generating maze using random maze generator
+    MG = mazeGen(7,7)
+
+    L = MG.generate()
 
     # Here, initial and final states are chosen.
     initial_state = (1, 1)
@@ -44,6 +50,7 @@ def main():
     print("Status: " + status)
 
     solver.showPath()
+    solver.animate()
     
 if __name__ == '__main__':
     main()
