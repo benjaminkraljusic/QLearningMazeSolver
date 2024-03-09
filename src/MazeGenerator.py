@@ -1,6 +1,18 @@
 import numpy as np
 
 
+def loadMazeFromTxt(mazeFilePath):
+    """Loads a maze from a text file as a 2x2 matrix
+
+    Args:
+        mazeFilePath (string): Path to the text file
+
+    Returns:
+        2x2 matrix that represents the maze
+    """
+    return np.loadtxt(mazeFilePath, dtype='i', delimiter='\t')
+
+
 class MazeGenerator:
     """Random maze matrix generator
     """
@@ -24,7 +36,7 @@ class MazeGenerator:
         }
 
 
-    def generate(self):
+    def generate(self, saveMazeTxtFilePath = None):
         """Generates the maze in the form of a 2x2 matrix, where 0s represent walls and 1s represent free space
 
         Returns:
@@ -71,4 +83,8 @@ class MazeGenerator:
 
         mazeWithFrame = np.zeros((self.mazeHeight, self.mazeWidth), dtype=int)
         mazeWithFrame[1:self.mazeHeight-1, 1:self.mazeWidth-1] = maze
+
+        if saveMazeTxtFilePath is not None:
+            np.savetxt(saveMazeTxtFilePath, mazeWithFrame, fmt='%d', delimiter='\t')
+
         return mazeWithFrame
