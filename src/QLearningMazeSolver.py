@@ -1,207 +1,248 @@
 import numpy as np
-from bidict import bidict
-import matplotlib.pyplot as plotter
-
-
-def loadMazeFromTxt(mazeFilePath):
-    """Loads a maze from a text file as a 2x2 matrix
-
-    Args:
-        mazeFilePath (string): Path to the text file
-
-    Returns:
-        2x2 matrix that represents the maze
-    """
-    return np.loadtxt(mazeFilePath, dtype='i', delimiter='\t')
+import matplotlib.pyplot as plt
+import random
 
 
 class QLearningMazeSolver:
     """A Q learning based maze solver
     """
 
-    def __init__(self, maze, startOfMaze=(1, 1), endOfMaze=None):
+    def __init__(self, maze, nTrainingEpisodes, maxSteps, discountFactor, epsMin, epsMax, epsDecayRate, finalState=None):
         """Initializes the instance with the maze and the desired start and end position
 
         Args:
             maze (np.ndarray): The maze represented as a 2x2 matrix with 0 for walls and 1 for paths
-            startOfMaze ((int, int)): Matrix indices that specified the desired start position
-            endOfMaze ((int, int)): Matrix indices that specified the desired end position
+            nTrainingEpisodes (int): Number of training episodes
+            maxSteps (int): Maximum number of moves/steps that the agent can perform in a single episode
+            discountFactor (float): Discount factor for Q learning algorithm
+            epsMin (float): Minimum value of the epsilon parameter in the decayed-epsilon-greedy policy
+            epsMax (float): Maximum value of the epsilon parameter in the decayed-epsilon-greedy policy
+            epsDecayRate (float): The decay rate in the decayed-epsilon-greedy policy
+            finalState ((int, int)): Matrix indices that specified the desired end position
         """
+
         self.maze = maze
         self.mazeHeight, self.mazeWidth = np.shape(maze)
 
-        if startOfMaze[0] < 0 or self.mazeHeight <= startOfMaze[0] or \
-                startOfMaze[1] < 0 or self.mazeWidth <= startOfMaze[1] \
-                or maze[startOfMaze[0], startOfMaze[1]] != 1:
-            raise ValueError("Start position is not part of the maze")
-
-        self.startOfMaze = startOfMaze
-
-        if endOfMaze is None:
-            endOfMaze = (self.mazeHeight - 2, self.mazeWidth - 2)
-        elif endOfMaze[0] < 0 or self.mazeHeight <= endOfMaze[0] or \
-                endOfMaze[1] < 0 or self.mazeWidth <= endOfMaze[1] \
-                or maze[endOfMaze[0], endOfMaze[1]] != 1:
+        if finalState is None:
+            finalState = (self.mazeHeight - 2, self.mazeWidth - 2)
+        elif finalState[0] < 0 or self.mazeHeight <= finalState[0] or \
+                finalState[1] < 0 or self.mazeWidth <= finalState[1] \
+                or maze[finalState[0], finalState[1]] != 1:
             raise ValueError("End position is not part of the maze")
 
-        self.endOfMaze = endOfMaze
+        self.nTrainingEpisodes = nTrainingEpisodes
+        self.maxSteps = maxSteps
+        self.gamma = discountFactor
+        self.epsMin = epsMin
+        self.epsMax = epsMax
+        self.eps = 1
+        self.epsDecayRate = epsDecayRate
 
-        self.__enumerateStatesInMaze()
-        self.__initializeQTable()
+        self.initialState = None
+        self.finalState = finalState
+        self.previousPreviousState = None
+        self.previousState = None
+        self.currentState = None
+
+        self.QTable = {}
+        self.rewards = {}
+        self.increments = {'up': [-1, 0],
+                           'down': [1, 0],
+                           'left': [0, -1],
+                           'right': [0, 1]}
+        self.oppositeAction = {'left': 'right',
+                               'right': 'left',
+                               'up': 'down',
+                               'down': 'up'}
+
+        self.visitedStates = []
+        self.QTableInit()
 
 
-    def __enumerateStatesInMaze(self):
-        """Enumerates every position in the maze with a unique state (number)
+    def QTableInit(self):
+        """Initializes the Q table and the state-action transition table
         """
-        self.states = bidict()
-        for i in range(self.mazeHeight):
-            for j in range(self.mazeWidth):
-                if self.maze[i][j] == 1:
-                    self.states.put(len(self.states), (i, j))
 
-        self.numOfStates = len(self.states)
+        LUT = np.argwhere(self.maze)
+        LUT = [tuple(i) for i in LUT]
 
+        for state in LUT:
+            actions = []
 
-    def __initializeQTable(self):
-        """Initializes the Q table and creates a state-action transition lookup table
-        """
-        self.QTable = -np.inf * np.ones((self.numOfStates, 4))
-        self.possibleMoves = {}
+            if self.maze[state[0] - 1][state[1]] == 1:
+                actions.append('up')
+            if self.maze[state[0] + 1][state[1]] == 1:
+                actions.append('down')
+            if self.maze[state[0]][state[1] - 1] == 1:
+                actions.append('left')
+            if self.maze[state[0]][state[1] + 1] == 1:
+                actions.append('right')
 
-        for currentState in range(self.numOfStates):
-            self.possibleMoves[currentState] = []
-            i, j = self.states[currentState]
+            qualities = [0 for _ in range(len(actions))]
 
-            if self.states.values().__contains__((i, j - 1)):
-                adjacentState = self.states.inv[(i, j - 1)]
-                self.possibleMoves[currentState].append((adjacentState, 0))
-                self.QTable[currentState][0] = 0
-
-            if self.states.values().__contains__((i, j + 1)):
-                adjacentState = self.states.inv[(i, j + 1)]
-                self.possibleMoves[currentState].append((adjacentState, 1))
-                self.QTable[currentState][1] = 0
-
-            if self.states.values().__contains__((i - 1, j)):
-                adjacentState = self.states.inv[(i - 1, j)]
-                self.possibleMoves[currentState].append((adjacentState, 2))
-                self.QTable[currentState][2] = 0
-
-            if self.states.values().__contains__((i + 1, j)):
-                adjacentState = self.states.inv[(i + 1, j)]
-                self.possibleMoves[currentState].append((adjacentState, 3))
-                self.QTable[currentState][3] = 0
+            self.QTable[state] = (actions, qualities)
 
 
-    def train(self, discountFactor, numOfEpisodes, maxNumberOfMoves, epsilonMin, epsilonMax, decayRate,
-              deadEndCheckerEnabled=False):
-        """Trains the Q table on the given maze
+    def changeState(self, action):
+        """Transition the agent from the current state to the next state using the specified action
 
         Args:
-            discountFactor (float): Discount factor for Q learning algorithm
-            numOfEpisodes (int): Number of episodes
-            maxNumberOfMoves (int): Maximum number of moves that the agent can perform in a single episode
-            epsilonMin (float): Minimum value of the epsilon parameter in the decayed-epsilon-greedy policy
-            epsilonMax (float): Maximum value of the epsilon parameter in the decayed-epsilon-greedy policy
-            decayRate (float): The decay rate in the decayed-epsilon-greedy policy
-            deadEndCheckerEnabled (bool): Specifies whether dead-end checking and optimization is performed
+            action (string): The action that will transition the agent from the current state
         """
-        firstState = self.states.inv[self.startOfMaze]
-        finalState = self.states.inv[self.endOfMaze]
 
-        for episode in range(numOfEpisodes):
-            epsilon = epsilonMin + (epsilonMax - epsilonMin) * np.exp(-decayRate * episode)
-            state = firstState
-            prevState = state
+        self.previousPreviousState = self.previousState
+        self.previousState = self.currentState
+        self.currentState = (self.currentState[0] + self.increments[action][0],
+                             self.currentState[1] + self.increments[action][1])
 
-            for i in range(maxNumberOfMoves):
-                # Select action using the epsilon-greedy policy
-                if np.random.uniform(0, 1) > epsilon:
-                    action = np.argmax(self.QTable[state])
-                else:
-                    action = np.random.choice([move[1] for move in self.possibleMoves[state]])
 
-                newState = [move[0] for move in self.possibleMoves[state] if move[1] == action][0]
+    def getActionEps(self):
+        """Selects an action using the epsilon-greedy policy
 
-                if newState == finalState:
-                    reward = 1
-                else:
-                    reward = 0
+        Returns:
+            An action that the agent can take
+        """
 
-                # Check if the current state is a dead-end
-                if deadEndCheckerEnabled and state != firstState and state != finalState and \
-                        newState == prevState and len(self.possibleMoves[state]) == 1:
-                    # Remove current state (dead-end) from future consideration
-                    moveFromPrevToCurrState = [move for move in self.possibleMoves[prevState] if move[0] == state][0]
-                    self.possibleMoves[prevState] \
-                        .remove(moveFromPrevToCurrState)
-                    self.QTable[state] = np.array(4 * [-np.inf])
-                    self.QTable[prevState][moveFromPrevToCurrState[1]] = -np.inf
+        rand = np.random.uniform()
+
+        if rand > self.eps:
+            return self.QTable[self.currentState][0][np.argmax(self.QTable[self.currentState][1])]
+        else:
+            return self.QTable[self.currentState][0][random.randint(0, len(self.QTable[self.currentState][0]) - 1)]
+
+
+    def learn(self, initialState = None, deadEndCheckerEnabled = False, greedy=False):
+        """Trains/Learns the Q table on the given maze
+
+        Args:
+            initialState ((int, int)): Matrix indices that specified the desired start position. If None a random initial position/state will be chosen in each episode
+            deadEndCheckerEnabled (bool): Specifies whether dead-end checking and optimization is performed
+            greedy (bool): Specifies whether the agent will be greedy, i.e., take the first solution it finds, instead of using all of the episodes to try and find the optimal one
+        """
+
+        if greedy is True and initialState is None:
+            raise ValueError("Greedy solution finding requires a fixed initial state")
+
+        for key in self.QTable:
+            self.rewards[key] = 0
+
+        self.rewards[self.finalState] = 100
+
+        for ep in range(self.nTrainingEpisodes):
+            self.eps = self.epsMin + (self.epsMax - self.epsMin) * np.exp(-self.epsDecayRate * ep)
+
+            if initialState is None:
+                self.initialState = None
+                while self.initialState is None:
+                    self.initialState = (np.random.randint(1, self.mazeHeight), np.random.randint(1, self.mazeWidth))
+                    if self.maze[self.initialState[0]][self.initialState[1]] == 0:
+                        self.initialState = None
+            else:
+                self.initialState = initialState
+
+            self.previousPreviousState = self.initialState
+            self.previousState = self.initialState
+            self.currentState = self.initialState
+            visitedStates = [self.currentState]
+
+            for i in range(self.maxSteps):
+                action = self.getActionEps()
+
+                # Transition to a new state
+                self.changeState(action)
+
+                visitedStates.append(self.currentState)
+
+                # Check if the previous state is a dead-end
+                if deadEndCheckerEnabled and self.currentState != self.finalState \
+                        and self.currentState == self.previousPreviousState \
+                        and len(self.QTable[self.previousState][0]) == 1:
+                    # Remove the action that transitions current state into previous state (dead-end)
+                    indexOfAction = self.QTable[self.currentState][0].index(self.oppositeAction[action])
+                    del self.QTable[self.currentState][0][indexOfAction]
+                    del self.QTable[self.currentState][1][indexOfAction]
                 else:
                     # Update Q table normally
-                    self.QTable[state][action] = reward + discountFactor * np.max(self.QTable[newState])
+                    self.QTable[self.previousState][1][self.QTable[self.previousState][0].index(action)] = \
+                        self.rewards[self.currentState] + self.gamma * max(self.QTable[self.currentState][1])
 
-                # End episode if the final state is reached
-                if newState == finalState:
+                # Episode is done if the final state is visited
+                if self.currentState == self.finalState:
+                    self.visitedStates.append(visitedStates)
                     break
 
-                prevState = state
-                state = newState
+            # If the greedy parameter is set to true the learning is done as soon as the solution is found. This
+            # assumes that the initial state is fixed and provides a greedy solution which is not necessarily optimal.
+            if greedy and initialState is not None and any(self.QTable[initialState][1]) != 0:
+                return
 
 
-    def traverseMaze(self, maxNumberOfMoves):
-        """Traverses the maze using the trained Q table
+    def getPath(self, initialState):
+        """Traverses the maze from the specified start position using the trained Q table
 
         Args:
-            maxNumberOfMoves (int): Maximum number of moves that the agent can perform
+            initialState ((int, int)): Matrix indices that specified the desired start position
 
         Returns:
             List of positions that the agent has visited while traversing the maze
         """
-        state = self.states.inv[self.startOfMaze]
-        finalState = self.states.inv[self.endOfMaze]
-        path = []
 
-        for i in range(maxNumberOfMoves):
-            path.append(self.states[state])
-            action = np.argmax(self.QTable[state])
+        if not (any(self.QTable[initialState][1]) != 0):
+            raise Exception("Maze is not solved. Path could not be found.")
 
-            newState = [move[0] for move in self.possibleMoves[state] if move[1] == action][0]
+        path = [initialState]
+        self.currentState = initialState
 
-            if newState == finalState:
-                path.append(self.states[newState])
+        # Do the walk
+        for _ in self.QTable:
+            self.changeState(self.QTable[self.currentState][0][np.argmax(self.QTable[self.currentState][1])])
+            path.append(self.currentState)
+            if self.currentState == self.finalState:
                 break
-
-            state = newState
 
         return path
 
 
-    def plotMaze(self, path=None):
-        """Plots the maze with a traversed path (if one is specified)
+    def showPath(self, initialState):
+        """Plots the maze with a traversed path from the specified start position
 
         Args:
-            path (list): List of positions that the agent has visited while traversing the maze
+           initialState ((int, int)): Matrix indices that specified the desired start position
         """
-        if path is None:
-            plotter.figure()
-            plotter.imshow(self.maze, cmap='binary_r')
-            plotter.show()
-        else:
-            mazeWithPath = self.maze * 2
 
-            for position in path:
-                mazeWithPath[position[0]][position[1]] = 1
+        if not (any(self.QTable[initialState][1]) != 0):
+            raise Exception("Maze is not solved. Path could not be found.")
 
-            plotter.figure()
-            plotter.imshow(mazeWithPath, cmap='bone')
-            plotter.show()
+        M = 3 * self.maze
+
+        path = self.getPath(initialState)
+
+        for s in path:
+            M[s[0]][s[1]] = 1
+
+        plt.figure()
+        plt.imshow(M, cmap='hot')
+        plt.show()
 
 
-    def getQTable(self):
-        """Returns the Q table
-
-        Returns:
-            Q table
+    def animate(self):
+        """Plots an animation of the agent learning the maze
         """
-        return self.QTable
+
+        if len(self.maze) * len(self.maze[0]) > 49:
+            raise ValueError("Animation not supported for mazes with more than 49 blocks.")
+
+        for i in range(len(self.visitedStates)):
+            title = 'Episode ' + str(i + 1)
+
+            for j in range(len(self.visitedStates[i])):
+                M = np.zeros((len(self.maze), len(self.maze[0]), 3), dtype=np.uint8)
+                M[self.maze == 1] = [255, 255, 255]
+                M[self.visitedStates[i][0][0]][self.visitedStates[i][0][1]] = [0, 255, 0]
+                M[self.finalState[0]][self.finalState[1]] = [255, 0, 0]
+                M[self.visitedStates[i][j][0]][self.visitedStates[i][j][1]] = [0, 0, 255]
+
+                plt.title(title)
+                plt.imshow(M)
+                plt.pause(0.01)
