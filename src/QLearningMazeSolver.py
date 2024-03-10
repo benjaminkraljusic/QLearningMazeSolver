@@ -193,15 +193,17 @@ class QLearningMazeSolver:
 
         path = [initialState]
         self.currentState = initialState
+        solutionFound = False
 
         # Do the walk
         for _ in self.QTable:
             self.changeState(self.QTable[self.currentState][0][np.argmax(self.QTable[self.currentState][1])])
             path.append(self.currentState)
             if self.currentState == self.finalState:
+                solutionFound = True
                 break
 
-        return path
+        return path, solutionFound
 
 
     def showPath(self, initialState):
@@ -216,7 +218,10 @@ class QLearningMazeSolver:
 
         M = 3 * self.maze
 
-        path = self.getPath(initialState)
+        path, solutionFound = self.getPath(initialState)
+
+        if not solutionFound:
+            raise Exception("Maze is not solved. Path could not be found.")
 
         for s in path:
             M[s[0]][s[1]] = 1
