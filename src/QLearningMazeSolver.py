@@ -26,6 +26,8 @@ class QLearningMazeSolver:
 
         if finalState is None:
             finalState = (self.mazeHeight - 2, self.mazeWidth - 2)
+            while maze[finalState[0], finalState[1]] != 1:
+                finalState = (finalState[0] - 1, finalState[1] - 1)
         elif finalState[0] < 0 or self.mazeHeight <= finalState[0] or \
                 finalState[1] < 0 or self.mazeWidth <= finalState[1] \
                 or maze[finalState[0], finalState[1]] != 1:
