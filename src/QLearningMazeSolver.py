@@ -188,9 +188,6 @@ class QLearningMazeSolver:
             List of positions that the agent has visited while traversing the maze
         """
 
-        if not (any(self.QTable[initialState][1]) != 0):
-            raise Exception("Maze is not solved. Path could not be found.")
-
         path = [initialState]
         self.currentState = initialState
         solutionFound = False
@@ -212,9 +209,6 @@ class QLearningMazeSolver:
         Args:
            initialState ((int, int)): Matrix indices that specified the desired start position
         """
-
-        if not (any(self.QTable[initialState][1]) != 0):
-            raise Exception("Maze is not solved. Path could not be found.")
 
         M = 3 * self.maze
 
