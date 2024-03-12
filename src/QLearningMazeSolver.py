@@ -138,7 +138,8 @@ class QLearningMazeSolver:
                 self.initialState = None
                 while self.initialState is None:
                     self.initialState = (np.random.randint(1, self.mazeHeight), np.random.randint(1, self.mazeWidth))
-                    if self.maze[self.initialState[0]][self.initialState[1]] == 0:
+                    if self.maze[self.initialState[0]][self.initialState[1]] == 0 \
+                            or self.initialState == self.finalState:
                         self.initialState = None
             else:
                 self.initialState = initialState
@@ -171,8 +172,9 @@ class QLearningMazeSolver:
 
                 # Episode is done if the final state is visited
                 if self.currentState == self.finalState:
-                    self.visitedStates.append(visitedStates)
                     break
+
+            self.visitedStates.append(visitedStates)
 
             # If the greedy parameter is set to true the learning is done as soon as the solution is found. This
             # assumes that the initial state is fixed and provides a greedy solution which is not necessarily optimal.
@@ -227,7 +229,7 @@ class QLearningMazeSolver:
         plt.show()
 
 
-    def animate(self):
+    def animate(self, saveImagesPath=None):
         """Plots an animation of the agent learning the maze
         """
 
@@ -246,4 +248,7 @@ class QLearningMazeSolver:
 
                 plt.title(title)
                 plt.imshow(M)
+                if saveImagesPath is not None:
+                    plt.savefig(saveImagesPath + "episode" + str(i) + "move" + str(j) + ".png")
+
                 plt.pause(0.01)
