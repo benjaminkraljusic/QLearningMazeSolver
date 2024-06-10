@@ -1,26 +1,21 @@
-# QLearningMazeSolver
+﻿
+# Q-learning based Maze Solver
+A maze solver application that makes use of the Q-learning algorithm
 
 ## Overview
-The `QLearningMazeSolver` is a Python-based project developed as part of the Intelligent Systems course at Mälardalen University, Västerås during the spring semester 2024. This project demonstrates the application of the Q-Learning algorithm for solving mazes. The core of this project is encapsulated in the `QLearningMazeSolver.py` class, where the Q-Learning algorithm and its associated methods are implemented.
-
-## Project done by
-- Benjamin Kraljušić
-- Dženan Kreho
-- Enesa Hrustić
+This application/project was developed as a part of the graduate course "Intelligent Systems", which is part of the Intelligent Embedded Systems Master's degree program offered by Mälardalen University, Sweden.
+<p align="center">  
+<img src="learningAnimation.gif" width="600"/><br>The learning process for varied initial points and dead-end detection
+</p>
+In addition to implementing the standard Q-learning algorithm, the application also allows for various configurations and heuristics, such as dead-end detection, greedy learning, and learning from fixed or varied initial points.
 
 ## Project Structure
-- `QLearningMazeSolver.py`: Contains the main implementation of the Q-Learning algorithm for solving mazes.
-- `main.py`: Used for testing solutions on different mazes, demonstrating the functionality of the Q-Learning algorithm.
+- `src/`: A directory containing the main implementation of the Q-Learning algorithm for solving mazes, and a random maze generator
 - `mazes/`: A directory where maze files are stored. Each maze file represents a different environment for testing the algorithm.
+- `main.py`: Used for testing solutions on different mazes, demonstrating the functionality of the Q-Learning algorithm.
+- `ProjectReport.pdf`: The project report
 
-## Running the Solver
-To solve a maze, simply run the `main.py` script:
-```
-python main.py
-```
-By default, `main.py` will attempt to solve a predefined maze. You can modify `main.py` to load different mazes from the `mazes/` directory. Note that for the mazes of different sizes, different learning parameters, such as number of episodes and maximum number of steps per episode, can lead to more efficient solutions.
-
-
-## How It Works
-The `QLearningMazeSolver` utilizes the Q-Learning algorithm, a model-free reinforcement learning technique, to find the optimal path through the maze. The algorithm iteratively updates the Q-values for each state-action pair until it converges to the optimal policy. This process involves exploring the environment (the maze), learning the rewards associated with different actions in various states, and exploiting this knowledge to navigate through the maze efficiently.
-
+## Project done by
+- [Benjamin Kraljušić](https://github.com/benjaminkraljusic)
+- [Dženan Kreho](https://github.com/dkreho1)
+- [Enesa Hrustić](https://github.com/EnesaHrustic)
